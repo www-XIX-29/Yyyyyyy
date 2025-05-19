@@ -3,6 +3,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>إدارة البطاقات</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
@@ -20,14 +21,15 @@
       background: #00796b;
       color: white;
       padding: 12px 0;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: bold;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       user-select: none;
     }
 
     #reader {
-      width: 300px;
+      width: 90%;
+      max-width: 300px;
       margin: 20px auto;
       border: 2px solid #00796b;
       border-radius: 8px;
@@ -52,6 +54,7 @@
     #card-images {
       max-width: 650px;
       margin: 10px auto 30px;
+      padding: 0 10px;
     }
 
     .card {
@@ -63,10 +66,12 @@
       border-radius: 10px;
       box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
       vertical-align: top;
+      width: 100%;
+      max-width: 180px;
     }
 
     .card img {
-      max-width: 180px;
+      max-width: 100%;
       border-radius: 8px;
     }
 
@@ -74,6 +79,7 @@
       font-weight: bold;
       margin-top: 5px;
       color: #00796b;
+      font-size: 14px;
     }
 
     .delete-btn {
@@ -81,6 +87,7 @@
       background-color: #d32f2f;
     }
 
+    /* Modal Styles */
     .modal {
       display: none;
       position: fixed;
@@ -95,9 +102,10 @@
 
     .modal-content {
       background-color: white;
-      padding: 25px 30px;
+      padding: 20px;
       border-radius: 12px;
       text-align: center;
+      width: 90%;
       max-width: 320px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.25);
     }
@@ -111,24 +119,45 @@
     .modal-content h3 {
       margin-bottom: 18px;
       color: #004d40;
+      font-size: 18px;
     }
 
     .modal-content button {
-      margin: 6px 8px;
-      padding: 10px 25px;
-      font-size: 16px;
+      margin: 6px 4px;
+      padding: 10px 15px;
+      font-size: 14px;
       border-radius: 10px;
       border: none;
       color: white;
       cursor: pointer;
       transition: background-color 0.3s ease;
-      min-width: 120px;
+      min-width: 100px;
     }
 
     #soldBtn { background-color: #00796b; }
     #forgyBtn { background-color: #009688; }
     #saveBtn { background-color: #388e3c; }
     #cancelBtn { background-color: #d32f2f; }
+
+    @media (max-width: 480px) {
+      #top-bar {
+        font-size: 14px;
+        padding: 10px 0;
+      }
+
+      button {
+        font-size: 14px;
+        padding: 8px 12px;
+      }
+
+      .label {
+        font-size: 13px;
+      }
+
+      .modal-content h3 {
+        font-size: 16px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -146,6 +175,7 @@
 
   <div id="card-images"></div>
 
+  <!-- Modal -->
   <div class="modal" id="typeModal">
     <div class="modal-content">
       <h3>اختر نوع الخط</h3>
@@ -165,9 +195,8 @@
   <script>
     let data = JSON.parse(localStorage.getItem("cards")) || [];
     let pendingCode = null;
-    let pendingImage = null;
+    let pendingVideo = null;
     let selectedLineType = null;
-    let scanner = null;
 
     function updateUI() {
       const container = document.getElementById("card-images");
@@ -221,19 +250,29 @@
       }
     }
 
-    function showTypeModal(code, image) {
+    function showTypeModal(code, video) {
       pendingCode = code;
-      pendingImage = image;
+      pendingVideo = video;
       selectedLineType = null;
       document.getElementById( selectedType ).textContent = "";
-      document.getElementById( previewImageContainer ).innerHTML = `<img src="${image}" />`;
+      const preview = document.getElementById( previewImageContainer );
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0);
+      const imageData = canvas.toDataURL("image/png");
+
+      preview.innerHTML = `<img src="${imageData}" />`;
+
       document.getElementById( typeModal ).style.display =  flex ;
     }
 
     function hideTypeModal() {
       document.getElementById( typeModal ).style.display =  none ;
       pendingCode = null;
-      pendingImage = null;
+      pendingVideo = null;
       selectedLineType = null;
     }
 
@@ -243,39 +282,40 @@
     }
 
     function confirmSave() {
-      if (!selectedLineType || !pendingImage || !pendingCode) {
+      if (!selectedLineType || !pendingVideo || !pendingCode) {
         alert("يرجى اختيار نوع الخط أولاً.");
         return;
       }
 
-      data.push({ code: pendingCode, type: selectedLineType, image: pendingImage });
+      const canvas = document.createElement("canvas");
+      canvas.width = pendingVideo.videoWidth;
+      canvas.height = pendingVideo.videoHeight + 30;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(pendingVideo, 0, 0);
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+      ctx.fillStyle = "black";
+      ctx.font = "20px Arial";
+      ctx.fillText(`${selectedLineType} - ${pendingCode}`, 10, canvas.height - 10);
+
+      const imageData = canvas.toDataURL("image/png");
+
+      data.push({ code: pendingCode, type: selectedLineType, image: imageData });
       localStorage.setItem("cards", JSON.stringify(data));
       updateUI();
       hideTypeModal();
     }
 
     function startScanner() {
-      if (scanner) {
-        scanner.stop().catch(() => {});
-      }
+      const html5QrCode = new Html5Qrcode("reader");
 
-      scanner = new Html5Qrcode("reader");
-
-      scanner.start(
+      html5QrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
         (decodedText) => {
           const video = document.querySelector("video");
           if (video && !data.some(card => card.code === decodedText)) {
-            const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(video, 0, 0);
-            const imageData = canvas.toDataURL("image/png");
-
-            scanner.stop(); // إيقاف الماسح بعد الالتقاط
-            showTypeModal(decodedText, imageData);
+            showTypeModal(decodedText, video);
           }
         },
         (errorMessage) => {
