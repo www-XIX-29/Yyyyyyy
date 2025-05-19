@@ -3,6 +3,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>إدارة البطاقات</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
@@ -14,6 +15,7 @@
       text-align: center;
       background-color: #e0f7fa;
       color: #004d40;
+      font-size: 16px;
     }
 
     #top-bar {
@@ -27,14 +29,17 @@
     }
 
     #reader {
-      width: 300px;
+      width: 90%;
+      max-width: 320px;
       margin: 20px auto;
       border: 2px solid #00796b;
       border-radius: 8px;
     }
 
     button {
-      margin: 10px 5px;
+      width: 90%;
+      max-width: 300px;
+      margin: 10px auto;
       padding: 10px 15px;
       font-size: 15px;
       cursor: pointer;
@@ -43,6 +48,7 @@
       background-color: #00796b;
       color: white;
       transition: background-color 0.3s ease;
+      display: block;
     }
 
     button:hover {
@@ -50,24 +56,27 @@
     }
 
     #card-images {
-      max-width: 650px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
       margin: 10px auto 30px;
     }
 
     .card {
-      display: inline-block;
+      width: 90%;
+      max-width: 300px;
       border: 1px solid #ccc;
-      margin: 10px;
       padding: 10px;
       background: white;
       border-radius: 10px;
       box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
-      vertical-align: top;
     }
 
     .card img {
-      max-width: 180px;
+      width: 100%;
       border-radius: 8px;
+      height: auto;
     }
 
     .label {
@@ -95,9 +104,10 @@
 
     .modal-content {
       background-color: white;
-      padding: 25px 30px;
+      padding: 20px;
       border-radius: 12px;
       text-align: center;
+      width: 90%;
       max-width: 320px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.25);
     }
@@ -114,7 +124,7 @@
     }
 
     .modal-content button {
-      margin: 6px 8px;
+      margin: 6px auto;
       padding: 10px 25px;
       font-size: 16px;
       border-radius: 10px;
@@ -122,7 +132,9 @@
       color: white;
       cursor: pointer;
       transition: background-color 0.3s ease;
-      min-width: 120px;
+      width: 90%;
+      max-width: 250px;
+      display: block;
     }
 
     #soldBtn { background-color: #00796b; }
@@ -146,6 +158,7 @@
 
   <div id="card-images"></div>
 
+  <!-- Modal -->
   <div class="modal" id="typeModal">
     <div class="modal-content">
       <h3>اختر نوع الخط</h3>
@@ -165,9 +178,8 @@
   <script>
     let data = JSON.parse(localStorage.getItem("cards")) || [];
     let pendingCode = null;
-    let pendingImage = null;
+    let pendingVideo = null;
     let selectedLineType = null;
-    let html5QrCode;
 
     function updateUI() {
       const container = document.getElementById("card-images");
@@ -221,49 +233,29 @@
       }
     }
 
-    function startScanner() {
-      html5QrCode = new Html5Qrcode("reader");
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        (decodedText) => {
-          html5QrCode.stop().then(() => {
-            const video = document.querySelector("video");
-            if (!video || data.some(card => card.code === decodedText)) return;
-
-            const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(video, 0, 0);
-            const imageData = canvas.toDataURL("image/png");
-
-            showTypeModal(decodedText, imageData);
-          }).catch(err => {
-            console.error("فشل في إيقاف الكاميرا:", err);
-          });
-        },
-        (errorMessage) => {
-          console.log("خطأ:", errorMessage);
-        }
-      ).catch(err => {
-        console.error("لم يتم بدء الكاميرا:", err);
-      });
-    }
-
-    function showTypeModal(code, imageData) {
+    function showTypeModal(code, video) {
       pendingCode = code;
-      pendingImage = imageData;
+      pendingVideo = video;
       selectedLineType = null;
       document.getElementById( selectedType ).textContent = "";
-      document.getElementById( previewImageContainer ).innerHTML = `<img src="${imageData}" />`;
+      const preview = document.getElementById( previewImageContainer );
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0);
+      const imageData = canvas.toDataURL("image/png");
+
+      preview.innerHTML = `<img src="${imageData}" />`;
+
       document.getElementById( typeModal ).style.display =  flex ;
     }
 
     function hideTypeModal() {
       document.getElementById( typeModal ).style.display =  none ;
       pendingCode = null;
-      pendingImage = null;
+      pendingVideo = null;
       selectedLineType = null;
     }
 
@@ -273,37 +265,51 @@
     }
 
     function confirmSave() {
-      if (!selectedLineType || !pendingCode || !pendingImage) {
+      if (!selectedLineType || !pendingVideo || !pendingCode) {
         alert("يرجى اختيار نوع الخط أولاً.");
         return;
       }
 
-      const image = new Image();
-      image.onload = function () {
-        const canvas = document.createElement("canvas");
-        canvas.width = image.width;
-        canvas.height = image.height + 30;
-        const ctx = canvas.getContext("2d");
+      const canvas = document.createElement("canvas");
+      canvas.width = pendingVideo.videoWidth;
+      canvas.height = pendingVideo.videoHeight + 30;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(pendingVideo, 0, 0);
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+      ctx.fillStyle = "black";
+      ctx.font = "20px Arial";
+      ctx.fillText(`${selectedLineType} - ${pendingCode}`, 10, canvas.height - 10);
 
-        ctx.drawImage(image, 0, 0);
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
-        ctx.fillStyle = "black";
-        ctx.font = "20px Arial";
-        ctx.fillText(`${selectedLineType} - ${pendingCode}`, 10, canvas.height - 10);
+      const imageData = canvas.toDataURL("image/png");
 
-        const finalImage = canvas.toDataURL("image/png");
+      data.push({ code: pendingCode, type: selectedLineType, image: imageData });
+      localStorage.setItem("cards", JSON.stringify(data));
+      updateUI();
+      hideTypeModal();
+    }
 
-        data.push({ code: pendingCode, type: selectedLineType, image: finalImage });
-        localStorage.setItem("cards", JSON.stringify(data));
-        updateUI();
-        hideTypeModal();
-      };
-      image.src = pendingImage;
+    function startScanner() {
+      const html5QrCode = new Html5Qrcode("reader");
+
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+          const video = document.querySelector("video");
+          if (video && !data.some(card => card.code === decodedText)) {
+            showTypeModal(decodedText, video);
+          }
+        },
+        (errorMessage) => {
+          console.log("خطأ:", errorMessage);
+        }
+      ).catch(err => {
+        console.error("لم يتم بدء الكاميرا:", err);
+      });
     }
 
     updateUI();
   </script>
 </body>
 </html>
-
