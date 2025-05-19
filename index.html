@@ -3,10 +3,6 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>إدارة البطاقات</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
@@ -133,26 +129,6 @@
     #forgyBtn { background-color: #009688; }
     #saveBtn { background-color: #388e3c; }
     #cancelBtn { background-color: #d32f2f; }
-
-    @media (max-width: 480px) {
-      #reader {
-        width: 95%;
-      }
-
-      .card img {
-        max-width: 120px;
-      }
-
-      .modal-content {
-        width: 90%;
-        padding: 20px;
-      }
-
-      button {
-        font-size: 14px;
-        padding: 8px 12px;
-      }
-    }
   </style>
 </head>
 <body>
@@ -189,8 +165,9 @@
   <script>
     let data = JSON.parse(localStorage.getItem("cards")) || [];
     let pendingCode = null;
-    let pendingVideo = null;
+    let pendingImage = null;
     let selectedLineType = null;
+    let html5QrCode;
 
     function updateUI() {
       const container = document.getElementById("card-images");
@@ -244,73 +221,27 @@
       }
     }
 
-    function showTypeModal(code, video) {
-      pendingCode = code;
-      pendingVideo = video;
-      selectedLineType = null;
-      document.getElementById( selectedType ).textContent = "";
-      const preview = document.getElementById( previewImageContainer );
-
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0);
-      const imageData = canvas.toDataURL("image/png");
-
-      preview.innerHTML = `<img src="${imageData}" />`;
-
-      document.getElementById( typeModal ).style.display =  flex ;
-    }
-
-    function hideTypeModal() {
-      document.getElementById( typeModal ).style.display =  none ;
-      pendingCode = null;
-      pendingVideo = null;
-      selectedLineType = null;
-    }
-
-    function selectType(type) {
-      selectedLineType = type;
-      document.getElementById( selectedType ).textContent = "النوع المحدد: " + type;
-    }
-
-    function confirmSave() {
-      if (!selectedLineType || !pendingVideo || !pendingCode) {
-        alert("يرجى اختيار نوع الخط أولاً.");
-        return;
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = pendingVideo.videoWidth;
-      canvas.height = pendingVideo.videoHeight + 30;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(pendingVideo, 0, 0);
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
-      ctx.fillStyle = "black";
-      ctx.font = "20px Arial";
-      ctx.fillText(`${selectedLineType} - ${pendingCode}`, 10, canvas.height - 10);
-
-      const imageData = canvas.toDataURL("image/png");
-
-      data.push({ code: pendingCode, type: selectedLineType, image: imageData });
-      localStorage.setItem("cards", JSON.stringify(data));
-      updateUI();
-      hideTypeModal();
-    }
-
     function startScanner() {
-      const html5QrCode = new Html5Qrcode("reader");
-
+      html5QrCode = new Html5Qrcode("reader");
       html5QrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
         (decodedText) => {
-          const video = document.querySelector("video");
-          if (video && !data.some(card => card.code === decodedText)) {
-            showTypeModal(decodedText, video);
-          }
+          html5QrCode.stop().then(() => {
+            const video = document.querySelector("video");
+            if (!video || data.some(card => card.code === decodedText)) return;
+
+            const canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(video, 0, 0);
+            const imageData = canvas.toDataURL("image/png");
+
+            showTypeModal(decodedText, imageData);
+          }).catch(err => {
+            console.error("فشل في إيقاف الكاميرا:", err);
+          });
         },
         (errorMessage) => {
           console.log("خطأ:", errorMessage);
@@ -320,7 +251,59 @@
       });
     }
 
+    function showTypeModal(code, imageData) {
+      pendingCode = code;
+      pendingImage = imageData;
+      selectedLineType = null;
+      document.getElementById( selectedType ).textContent = "";
+      document.getElementById( previewImageContainer ).innerHTML = `<img src="${imageData}" />`;
+      document.getElementById( typeModal ).style.display =  flex ;
+    }
+
+    function hideTypeModal() {
+      document.getElementById( typeModal ).style.display =  none ;
+      pendingCode = null;
+      pendingImage = null;
+      selectedLineType = null;
+    }
+
+    function selectType(type) {
+      selectedLineType = type;
+      document.getElementById( selectedType ).textContent = "النوع المحدد: " + type;
+    }
+
+    function confirmSave() {
+      if (!selectedLineType || !pendingCode || !pendingImage) {
+        alert("يرجى اختيار نوع الخط أولاً.");
+        return;
+      }
+
+      const image = new Image();
+      image.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = image.width;
+        canvas.height = image.height + 30;
+        const ctx = canvas.getContext("2d");
+
+        ctx.drawImage(image, 0, 0);
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+        ctx.fillStyle = "black";
+        ctx.font = "20px Arial";
+        ctx.fillText(`${selectedLineType} - ${pendingCode}`, 10, canvas.height - 10);
+
+        const finalImage = canvas.toDataURL("image/png");
+
+        data.push({ code: pendingCode, type: selectedLineType, image: finalImage });
+        localStorage.setItem("cards", JSON.stringify(data));
+        updateUI();
+        hideTypeModal();
+      };
+      image.src = pendingImage;
+    }
+
     updateUI();
   </script>
 </body>
 </html>
+
