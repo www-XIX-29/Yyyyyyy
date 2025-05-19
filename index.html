@@ -3,6 +3,10 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>إدارة البطاقات</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
@@ -81,7 +85,6 @@
       background-color: #d32f2f;
     }
 
-    /* Modal Styles */
     .modal {
       display: none;
       position: fixed;
@@ -130,6 +133,26 @@
     #forgyBtn { background-color: #009688; }
     #saveBtn { background-color: #388e3c; }
     #cancelBtn { background-color: #d32f2f; }
+
+    @media (max-width: 480px) {
+      #reader {
+        width: 95%;
+      }
+
+      .card img {
+        max-width: 120px;
+      }
+
+      .modal-content {
+        width: 90%;
+        padding: 20px;
+      }
+
+      button {
+        font-size: 14px;
+        padding: 8px 12px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -147,14 +170,13 @@
 
   <div id="card-images"></div>
 
-  <!-- Modal -->
   <div class="modal" id="typeModal">
     <div class="modal-content">
       <h3>اختر نوع الخط</h3>
       <div id="previewImageContainer"></div>
       <div style="margin: 10px 0;">
-        <button onclick="selectType('خط مباع')" id="soldBtn">خط مباع</button>
-        <button onclick="selectType('تبديل فورجي')" id="forgyBtn">تبديل فورجي</button>
+        <button onclick="selectType( خط مباع )" id="soldBtn">خط مباع</button>
+        <button onclick="selectType( تبديل فورجي )" id="forgyBtn">تبديل فورجي</button>
       </div>
       <div id="selectedType" style="margin: 10px; color: #004d40; font-weight: bold;"></div>
       <div style="margin-top: 15px;">
@@ -226,10 +248,9 @@
       pendingCode = code;
       pendingVideo = video;
       selectedLineType = null;
-      document.getElementById('selectedType').textContent = "";
-      const preview = document.getElementById('previewImageContainer');
+      document.getElementById( selectedType ).textContent = "";
+      const preview = document.getElementById( previewImageContainer );
 
-      // التقاط صورة من الفيديو
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -239,11 +260,11 @@
 
       preview.innerHTML = `<img src="${imageData}" />`;
 
-      document.getElementById('typeModal').style.display = 'flex';
+      document.getElementById( typeModal ).style.display =  flex ;
     }
 
     function hideTypeModal() {
-      document.getElementById('typeModal').style.display = 'none';
+      document.getElementById( typeModal ).style.display =  none ;
       pendingCode = null;
       pendingVideo = null;
       selectedLineType = null;
@@ -251,7 +272,7 @@
 
     function selectType(type) {
       selectedLineType = type;
-      document.getElementById('selectedType').textContent = "النوع المحدد: " + type;
+      document.getElementById( selectedType ).textContent = "النوع المحدد: " + type;
     }
 
     function confirmSave() {
