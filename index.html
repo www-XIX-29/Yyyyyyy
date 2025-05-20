@@ -1,248 +1,127 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>Barcode Manager App</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة البطاقات</title>
   <style>
     body {
-      font-family:  Segoe UI , Tahoma, Geneva, Verdana, sans-serif;
-      text-align: center;
-      direction: rtl;
-      background: #f4f7fa;
+      font-family:  Arial , sans-serif;
+      background-color: #f1f7fa;
       margin: 0;
-      padding: 20px;
-      color: #333;
+      padding: 0;
+      text-align: center;
     }
+
     h2 {
-      margin-bottom: 30px;
-      color: #005f73;
+      margin-top: 30px;
+      color: #0077a6;
     }
+
+    .button-container {
+      margin-top: 20px;
+    }
+
     button {
-      background-color: #0081a7;
-      color: white;
+      background-color: #0077a6;
       border: none;
-      padding: 12px 25px;
-      margin: 0 10px 20px 10px;
-      font-size: 18px;
+      color: white;
+      padding: 12px 20px;
+      margin: 10px;
       border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
-      box-shadow: 0 4px 8px rgb(0 129 167 / 0.3);
-    }
-    button:hover {
-      background-color: #005f73;
-      box-shadow: 0 6px 12px rgb(0 95 115 / 0.5);
-    }
-    #reader, #readerVerify {
-      margin: 20px auto;
-      width: 320px;
-      max-width: 90vw;
-      border: 3px solid #0081a7;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 129, 167, 0.5);
-      background: white;
-      padding: 10px;
-    }
-    #codesContainer {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 15px;
-    }
-    .codeBox {
-      border: 1px solid #0081a7;
-      padding: 8px 12px;
-      border-radius: 6px;
-      background: #e0f7fa;
-      min-width: 100px;
-      font-weight: bold;
-      word-break: break-all;
-      user-select: all;
-    }
-    table {
-      margin: 20px auto 40px;
-      border-collapse: collapse;
-      width: 90%;
-      max-width: 700px;
-      background: white;
-      box-shadow: 0 0 10px rgb(0 129 167 / 0.2);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 12px 15px;
       font-size: 16px;
+      transition: background-color 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-    th {
-      background-color: #0081a7;
-      color: white;
+
+    button:hover {
+      background-color: #005f84;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      text-align: right;
+    }
+
+    .close {
+      color: #aaa;
+      float: left;
+      font-size: 28px;
       font-weight: bold;
+      cursor: pointer;
     }
-    #status {
-      font-weight: bold;
-      margin-top: 15px;
-      font-size: 20px;
-      min-height: 24px;
-    }
-    h3, h4 {
-      color: #00707a;
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
     }
   </style>
 </head>
+
 <body>
   <h2>نظام إدارة البطاقات</h2>
-  <button onclick="showSection( lines )">الخطوط المتبقية</button>
-  <button onclick="showSection( verify )">التحقق من البيع</button>
-  <button onclick="showStats()">إحصائيات</button>
 
-  <div id="linesSection" style="display:none;">
-    <h3>إضافة خطوط جديدة</h3>
-    <div id="reader"></div>
-    <h4>عدد الخطوط المتبقية: <span id="remainingCount">0</span></h4>
-    <div id="codesContainer"></div>
-    <button onclick="clearCodes()">حذف الجميع</button>
+  <div class="button-container">
+    <button onclick="openStatistics()">إحصائيات</button>
+    <button onclick="scanBarcode()">التحقق من البيع</button>
+    <button onclick="alert( عرض الخطوط المتبقية )">الخطوط المتبقية</button>
   </div>
 
-  <div id="verifySection" style="display:none;">
-    <h3>التحقق من البيع</h3>
-    <div id="readerVerify"></div>
-    <div id="status"></div>
-    <h4>عدد البطاقات المباعة: <span id="soldCount">0</span></h4>
-    <table id="soldTable">
-      <tr><th>#</th><th>الباركود</th><th>الحالة</th></tr>
-    </table>
-  </div>
-
-  <div id="statsModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border-radius:10px; padding:20px; box-shadow:0 0 20px rgba(0,0,0,0.3); z-index:999;">
-    <h3>إحصائيات</h3>
-    <p>عدد البطاقات المباعة: <span id="soldTotal">0</span></p>
-    <p>عدد البطاقات المتبقية: <span id="unsoldTotal">0</span></p>
-    <button onclick="closeStats()">إغلاق</button>
+  <div id="statisticsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeStatistics()">&times;</span>
+      <h3>إحصائيات البطاقات</h3>
+      <p>البطاقات المباعة: <span id="soldCount">0</span></p>
+      <p>البطاقات غير المباعة: <span id="unsoldCount">0</span></p>
+    </div>
   </div>
 
   <script>
-    let codes = JSON.parse(localStorage.getItem("savedCodes") || "[]");
-    let soldCodes = JSON.parse(localStorage.getItem("soldCodes") || "[]");
+    let sold = 0;
+    let unsold = 0;
 
-    function renderTable() {
-      const container = document.getElementById("codesContainer");
-      const countSpan = document.getElementById("remainingCount");
-      container.innerHTML = "";
-      codes.forEach((code) => {
-        const codeBox = document.createElement("div");
-        codeBox.textContent = code;
-        codeBox.className = "codeBox";
-        container.appendChild(codeBox);
-      });
-      countSpan.textContent = codes.length;
+    function openStatistics() {
+      document.getElementById("statisticsModal").style.display = "block";
+      document.getElementById("soldCount").innerText = sold;
+      document.getElementById("unsoldCount").innerText = unsold;
     }
 
-    function renderSoldTable() {
-      const table = document.getElementById("soldTable");
-      const countSpan = document.getElementById("soldCount");
-      table.innerHTML = "<tr><th>#</th><th>الباركود</th><th>الحالة</th></tr>";
-      soldCodes.forEach((code, i) => {
-        const row = table.insertRow();
-        row.insertCell(0).textContent = i + 1;
-        row.insertCell(1).textContent = code;
-        row.insertCell(2).textContent = "تم بيعه";
-      });
-      countSpan.textContent = soldCodes.length;
+    function closeStatistics() {
+      document.getElementById("statisticsModal").style.display = "none";
     }
 
-    function clearCodes() {
-      if (confirm("هل أنت متأكد من حذف جميع الأكواد؟")) {
-        codes = [];
-        soldCodes = [];
-        localStorage.setItem("savedCodes", JSON.stringify([]));
-        localStorage.setItem("soldCodes", JSON.stringify([]));
-        renderTable();
-        renderSoldTable();
-      }
-    }
-
-    function showSection(section) {
-      document.getElementById("linesSection").style.display = "none";
-      document.getElementById("verifySection").style.display = "none";
-      document.getElementById("status").textContent = "";
-
-      if (section === "lines") {
-        document.getElementById("linesSection").style.display = "block";
-        startScanner("reader", handleLineScan);
+    function scanBarcode() {
+      // محاكاة قراءة باركود
+      const soldNow = confirm("هل تم بيع البطاقة؟ اضغط نعم إذا تم البيع.");
+      if (soldNow) {
+        sold++;
       } else {
-        document.getElementById("verifySection").style.display = "block";
-        startScanner("readerVerify", handleVerifyScan);
+        unsold++;
       }
+      alert("تم تحديث الإحصائيات بنجاح");
     }
-
-    let currentScanner = null;
-
-    function startScanner(elementId, callback) {
-      if (currentScanner) {
-        currentScanner.stop().catch(() => {});
-      }
-
-      const html5QrCode = new Html5Qrcode(elementId);
-      currentScanner = html5QrCode;
-
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        (decodedText) => {
-          callback(decodedText);
-          html5QrCode.stop().catch(() => {});
-        }
-      ).catch(err => {
-        console.error("خطأ في تشغيل الماسح:", err);
-        alert("تعذر تشغيل الكاميرا. تأكد من السماح بالوصول للكاميرا.");
-      });
-    }
-
-    function handleLineScan(code) {
-      if (!codes.includes(code)) {
-        codes.push(code);
-        localStorage.setItem("savedCodes", JSON.stringify(codes));
-        renderTable();
-        alert("تم حفظ الكود بنجاح");
-      } else {
-        alert("هذا الكود موجود مسبقاً");
-      }
-    }
-
-    function handleVerifyScan(code) {
-      const status = document.getElementById("status");
-
-      if (soldCodes.includes(code)) {
-        status.textContent = "تم بيع البطاقة من قبل";
-        status.style.color = "orange";
-      } else if (codes.includes(code)) {
-        status.textContent = "تمت عملية البيع";
-        status.style.color = "green";
-        soldCodes.push(code);
-        localStorage.setItem("soldCodes", JSON.stringify(soldCodes));
-        renderSoldTable();
-      } else {
-        status.textContent = "لم يتم العثور على البطاقة";
-        status.style.color = "red";
-      }
-    }
-
-    function showStats() {
-      document.getElementById("soldTotal").textContent = soldCodes.length;
-      document.getElementById("unsoldTotal").textContent = codes.length - soldCodes.length;
-      document.getElementById("statsModal").style.display = "block";
-    }
-
-    function closeStats() {
-      document.getElementById("statsModal").style.display = "none";
-    }
-
-    renderTable();
-    renderSoldTable();
-    showSection( lines );
   </script>
 </body>
+
 </html>
