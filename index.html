@@ -1,230 +1,303 @@
+
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>Barcode Manager App</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>واجهة التطبيق</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
-      font-family:  Segoe UI , Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f7fa;
-      color: #333;
       margin: 0;
+      font-family:  Segoe UI , Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: white;
+      width: 350px;
       padding: 20px;
-      text-align: center;
-      direction: rtl;
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+      align-items: center;
     }
-    h2 {
-      color: #005f73;
+
+    #main-buttons {
+      display: flex;
     }
-    button {
-      background-color: #0081a7;
-      color: white;
+
+    .btn {
+      padding: 15px;
       border: none;
-      padding: 12px 20px;
-      margin: 10px;
-      font-size: 16px;
-      border-radius: 8px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
       cursor: pointer;
       transition: 0.3s;
+      color: white;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+      width: 100%;
     }
-    button:hover {
-      background-color: #005f73;
+
+    .btn:hover {
+      transform: translateY(-3px);
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
     }
-    #reader, #readerVerify {
-      margin: 20px auto;
-      width: 320px;
-      border: 2px solid #0081a7;
-      border-radius: 10px;
-      padding: 10px;
-      background: #fff;
+
+    #reader, #verify-reader {
+      width: 100%;
+      max-width: 320px;
+      margin-top: 10px;
     }
-    .codeBox {
-      border: 1px solid #0081a7;
+
+    table {
+      width: 100%;
+      max-width: 320px;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    th, td {
       padding: 8px;
-      margin: 5px;
-      display: inline-block;
-      background: #e0f7fa;
-      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    th {
+      background-color: #e0e7ff;
+    }
+
+    .back-btn, .delete-btn {
+      background-color: #ef4444;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .back-btn {
+      background-color: #2563eb;
+    }
+
+    .title {
+      font-weight: bold;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    .message {
+      font-size: 16px;
+      margin-top: 10px;
       font-weight: bold;
     }
-    #codesContainer {
-      margin-top: 15px;
-    }
-    table {
-      width: 90%;
-      margin: 20px auto;
-      border-collapse: collapse;
-      background: #fff;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
-    }
-    th {
-      background: #0081a7;
-      color: white;
-    }
-    #popup {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-      z-index: 1000;
-      width: 300px;
-    }
-    #popup h3 {
-      margin-top: 0;
-      color: #00707a;
-    }
-    #overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.4);
-      z-index: 999;
-    }
+
+    .success { color: green; }
+    .error { color: red; }
+    .warning { color: orange; }
   </style>
 </head>
 <body>
 
-  <h2>تطبيق إدارة البطاقات</h2>
-  <button onclick="showSection( lines )">الخطوط</button>
-  <button onclick="showSection( verify )">التحقق من البيع</button>
-  <button onclick="showPopup()">إحصائيات</button>
+  <div class="container" id="main-buttons">
+    <button class="btn" onclick="startScanner()">قسم الخطوط</button>
+    <button class="btn" onclick="startVerifier()">التحقق من الخطوط</button>
+    <button class="btn" onclick="showStats()">الإحصائيات</button>
+  </div>
 
-  <div id="linesSection" style="display:none;">
+  <!-- قسم تصوير الخطوط -->
+  <div class="container" id="barcode-section">
+    <h3>ماسح الباركود (قسم الخطوط)</h3>
     <div id="reader"></div>
-    <div id="codesContainer"></div>
-    <p>عدد الخطوط: <span id="remainingCount">0</span></p>
-  </div>
 
-  <div id="verifySection" style="display:none;">
-    <div id="readerVerify"></div>
-    <p id="status"></p>
-    <table id="soldTable">
-      <tr><th>#</th><th>الباركود</th><th>الحالة</th></tr>
+    <div class="title">الأرقام الملتقطة:</div>
+    <table id="barcode-table">
+      <thead>
+        <tr><th>#</th><th>الرقم</th></tr>
+      </thead>
+      <tbody></tbody>
     </table>
-    <p>عدد البطاقات المباعة: <span id="soldCount">0</span></p>
+
+    <button class="back-btn" onclick="stopScanner()">رجوع</button>
+    <button class="delete-btn" onclick="clearAll()">حذف الكل</button>
   </div>
 
-  <div id="overlay" onclick="closePopup()"></div>
-  <div id="popup">
-    <h3>إحصائيات</h3>
-    <p>خط مباع: <span id="soldStat">0</span></p>
-    <p>تبديل إلى فورجي: <span id="forgyStat">0</span></p>
-    <p>تم التحقق من بيعها: <span id="verifiedStat">0</span></p>
-    <p>لم يتم التحقق بعد: <span id="unverifiedStat">0</span></p>
-    <button onclick="closePopup()">إغلاق</button>
+  <!-- قسم التحقق -->
+  <div class="container" id="verify-section">
+    <h3>التحقق من الخطوط</h3>
+    <div id="verify-reader"></div>
+
+    <div class="message" id="verify-message"></div>
+
+    <div class="title">الخطوط التي تم بيعها:</div>
+    <table id="sold-table">
+      <thead>
+        <tr><th>#</th><th>الرقم</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button class="back-btn" onclick="stopVerifier()">رجوع</button>
+  </div>
+
+  <!-- قسم الإحصائيات -->
+  <div class="container" id="stats-section">
+    <h3>الإحصائيات</h3>
+    <div style="font-size: 18px; margin: 10px 0;">
+      <p>إجمالي الخطوط المصورة: <strong id="total-scanned">0</strong></p>
+      <p>الخطوط المباعة: <strong id="total-sold">0</strong></p>
+      <p>المتبقية: <strong id="total-remaining">0</strong></p>
+    </div>
+    <button class="back-btn" onclick="closeStats()">رجوع</button>
   </div>
 
   <script>
-    let codes = JSON.parse(localStorage.getItem("savedCodes") || "[]");
-    let soldCodes = JSON.parse(localStorage.getItem("soldCodes") || "[]");
-    let soldStat = 0, forgyStat = 0;
+    let html5QrCode, verifyQrCode;
+    let scannedCodes = new Set(JSON.parse(localStorage.getItem("savedBarcodes") || "[]"));
+    let soldCodes = new Set(JSON.parse(localStorage.getItem("soldBarcodes") || "[]"));
+    const barcodeTable = document.querySelector("#barcode-table tbody");
+    const soldTable = document.querySelector("#sold-table tbody");
+    let codeCounter = 1, soldCounter = 1;
 
-    function renderTable() {
-      const container = document.getElementById("codesContainer");
-      container.innerHTML = "";
-      codes.forEach(code => {
-        const box = document.createElement("div");
-        box.className = "codeBox";
-        box.textContent = code;
-        container.appendChild(box);
-      });
-      document.getElementById("remainingCount").textContent = codes.length;
-    }
-
-    function renderSoldTable() {
-      const table = document.getElementById("soldTable");
-      table.innerHTML = "<tr><th>#</th><th>الباركود</th><th>الحالة</th></tr>";
-      soldCodes.forEach((code, i) => {
-        const row = table.insertRow();
-        row.insertCell(0).textContent = i + 1;
-        row.insertCell(1).textContent = code;
-        row.insertCell(2).textContent = "تم بيعه";
-      });
-      document.getElementById("soldCount").textContent = soldCodes.length;
-    }
-
-    function showSection(section) {
-      document.getElementById("linesSection").style.display = section ===  lines  ?  block  :  none ;
-      document.getElementById("verifySection").style.display = section ===  verify  ?  block  :  none ;
-      if (section ===  lines ) startScanner("reader", handleLineScan);
-      if (section ===  verify ) startScanner("readerVerify", handleVerifyScan);
-    }
-
-    function startScanner(id, callback) {
-      if (window.currentScanner) {
-        window.currentScanner.stop().catch(() => {});
+    function loadStoredCodes() {
+      scannedCodes = new Set(JSON.parse(localStorage.getItem("savedBarcodes") || "[]"));
+      barcodeTable.innerHTML = "";
+      codeCounter = 1;
+      for (const code of scannedCodes) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${codeCounter++}</td><td>${code}</td>`;
+        barcodeTable.appendChild(row);
       }
-      const scanner = new Html5Qrcode(id);
-      window.currentScanner = scanner;
-      scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        code => {
-          callback(code);
-          scanner.stop().catch(() => {});
+    }
+
+    function loadSoldCodes() {
+      soldCodes = new Set(JSON.parse(localStorage.getItem("soldBarcodes") || "[]"));
+      soldTable.innerHTML = "";
+      soldCounter = 1;
+      for (const code of soldCodes) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${soldCounter++}</td><td>${code}</td>`;
+        soldTable.appendChild(row);
+      }
+    }
+
+    function saveCodes() {
+      localStorage.setItem("savedBarcodes", JSON.stringify([...scannedCodes]));
+    }
+
+    function saveSold() {
+      localStorage.setItem("soldBarcodes", JSON.stringify([...soldCodes]));
+    }
+
+    function startScanner() {
+      document.getElementById( main-buttons ).style.display =  none ;
+      document.getElementById( barcode-section ).style.display =  flex ;
+      loadStoredCodes();
+
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+        (decodedText) => {
+          if (!scannedCodes.has(decodedText)) {
+            scannedCodes.add(decodedText);
+            saveCodes();
+            const row = document.createElement("tr");
+            row.innerHTML = `<td>${codeCounter++}</td><td>${decodedText}</td>`;
+            barcodeTable.appendChild(row);
+          }
         }
-      ).catch(err => alert("فشل في تشغيل الكاميرا: " + err));
+      ).catch(err => alert("خطأ في الكاميرا: " + err));
     }
 
-    function handleLineScan(code) {
-      if (!codes.includes(code)) {
-        codes.push(code);
-        localStorage.setItem("savedCodes", JSON.stringify(codes));
-        renderTable();
-        alert("تمت الإضافة");
-      } else {
-        alert("الكود موجود بالفعل");
+    function stopScanner() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          document.getElementById( barcode-section ).style.display =  none ;
+          document.getElementById( main-buttons ).style.display =  flex ;
+        });
       }
     }
 
-    function handleVerifyScan(code) {
-      const status = document.getElementById("status");
-      if (soldCodes.includes(code)) {
-        status.textContent = "تم بيع البطاقة من قبل";
-        status.style.color = "orange";
-      } else if (codes.includes(code)) {
-        status.textContent = "تمت عملية البيع";
-        status.style.color = "green";
-        soldCodes.push(code);
-        localStorage.setItem("soldCodes", JSON.stringify(soldCodes));
-        renderSoldTable();
-      } else {
-        status.textContent = "لم يتم العثور على البطاقة";
-        status.style.color = "red";
+    function clearAll() {
+      if (confirm("هل أنت متأكد من حذف جميع الأرقام؟")) {
+        scannedCodes.clear();
+        saveCodes();
+        barcodeTable.innerHTML = "";
+        codeCounter = 1;
       }
     }
 
-    function showPopup() {
-      soldStat = soldCodes.length;
-      forgyStat = Math.floor(soldCodes.length / 2);
-      document.getElementById("soldStat").textContent = soldStat;
-      document.getElementById("forgyStat").textContent = forgyStat;
-      document.getElementById("verifiedStat").textContent = soldStat;
-      document.getElementById("unverifiedStat").textContent = codes.length - soldStat;
-      document.getElementById("overlay").style.display = "block";
-      document.getElementById("popup").style.display = "block";
+    function startVerifier() {
+      document.getElementById( main-buttons ).style.display =  none ;
+      document.getElementById( verify-section ).style.display =  flex ;
+      loadSoldCodes();
+      const msg = document.getElementById("verify-message");
+      msg.innerText = "";
+      msg.className = "message";
+
+      verifyQrCode = new Html5Qrcode("verify-reader");
+      verifyQrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+        (code) => {
+          if (soldCodes.has(code)) {
+            msg.innerText = "الخط مباع من قبل";
+            msg.className = "message warning";
+          } else if (scannedCodes.has(code)) {
+            soldCodes.add(code);
+            saveSold();
+            const row = document.createElement("tr");
+            row.innerHTML = `<td>${soldCounter++}</td><td>${code}</td>`;
+            soldTable.appendChild(row);
+            msg.innerText = "تم بيع الخط";
+            msg.className = "message success";
+          } else {
+            msg.innerText = "لم يتم إيجاد الخط";
+            msg.className = "message error";
+          }
+        }
+      ).catch(err => alert("تعذر تشغيل الكاميرا: " + err));
     }
 
-    function closePopup() {
-      document.getElementById("overlay").style.display = "none";
-      document.getElementById("popup").style.display = "none";
+    function stopVerifier() {
+      if (verifyQrCode) {
+        verifyQrCode.stop().then(() => {
+          verifyQrCode.clear();
+          document.getElementById( verify-section ).style.display =  none ;
+          document.getElementById( main-buttons ).style.display =  flex ;
+        });
+      }
     }
 
-    renderTable();
-    renderSoldTable();
-    showSection( lines );
+    function showStats() {
+      const total = scannedCodes.size;
+      const sold = soldCodes.size;
+      const remaining = total - sold;
+      document.getElementById( total-scanned ).innerText = total;
+      document.getElementById( total-sold ).innerText = sold;
+      document.getElementById( total-remaining ).innerText = remaining;
+
+      document.getElementById( main-buttons ).style.display =  none ;
+      document.getElementById( stats-section ).style.display =  flex ;
+    }
+
+    function closeStats() {
+      document.getElementById( stats-section ).style.display =  none ;
+      document.getElementById( main-buttons ).style.display =  flex ;
+    }
+
+    // تحميل البيانات عند الفتح
+    loadStoredCodes();
+    loadSoldCodes();
   </script>
+
 </body>
 </html>
