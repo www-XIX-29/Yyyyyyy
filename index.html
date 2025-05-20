@@ -1,332 +1,230 @@
-
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إدارة البطاقات</title>
+  <meta charset="UTF-8">
+  <title>Barcode Manager App</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
-      font-family: Tahoma, sans-serif;
-      direction: rtl;
+      font-family:  Segoe UI , Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7fa;
+      color: #333;
       margin: 0;
-      padding: 0;
+      padding: 20px;
       text-align: center;
-      background-color: #e0f7fa;
-      color: #004d40;
+      direction: rtl;
     }
-
-    #top-bar {
-      background: #00796b;
-      color: white;
-      padding: 12px 0;
-      font-size: 16px;
-      font-weight: bold;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      user-select: none;
+    h2 {
+      color: #005f73;
     }
-
-    #reader {
-      width: 90%;
-      max-width: 300px;
-      margin: 20px auto;
-      border: 2px solid #00796b;
-      border-radius: 8px;
-    }
-
     button {
-      margin: 10px 5px;
-      padding: 10px 15px;
-      font-size: 15px;
-      cursor: pointer;
-      border: none;
-      border-radius: 8px;
-      background-color: #00796b;
+      background-color: #0081a7;
       color: white;
-      transition: background-color 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #004d40;
-    }
-
-    #card-images {
-      max-width: 650px;
-      margin: 10px auto 30px;
-      padding: 0 10px;
-    }
-
-    .card {
-      display: inline-block;
-      border: 1px solid #ccc;
+      border: none;
+      padding: 12px 20px;
       margin: 10px;
-      padding: 10px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
-      vertical-align: top;
-      width: 100%;
-      max-width: 180px;
-    }
-
-    .card img {
-      max-width: 100%;
+      font-size: 16px;
       border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
     }
-
-    .label {
+    button:hover {
+      background-color: #005f73;
+    }
+    #reader, #readerVerify {
+      margin: 20px auto;
+      width: 320px;
+      border: 2px solid #0081a7;
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+    }
+    .codeBox {
+      border: 1px solid #0081a7;
+      padding: 8px;
+      margin: 5px;
+      display: inline-block;
+      background: #e0f7fa;
+      border-radius: 6px;
       font-weight: bold;
-      margin-top: 5px;
-      color: #00796b;
-      font-size: 14px;
     }
-
-    .delete-btn {
-      margin-top: 8px;
-      background-color: #d32f2f;
+    #codesContainer {
+      margin-top: 15px;
     }
-
-    /* Modal Styles */
-    .modal {
+    table {
+      width: 90%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+    th {
+      background: #0081a7;
+      color: white;
+    }
+    #popup {
       display: none;
       position: fixed;
-      z-index: 3000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.4);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal-content {
-      background-color: white;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
       padding: 20px;
       border-radius: 12px;
-      text-align: center;
-      width: 90%;
-      max-width: 320px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      width: 300px;
     }
-
-    .modal-content img {
-      max-width: 100%;
-      border-radius: 8px;
-      margin-bottom: 10px;
+    #popup h3 {
+      margin-top: 0;
+      color: #00707a;
     }
-
-    .modal-content h3 {
-      margin-bottom: 18px;
-      color: #004d40;
-      font-size: 18px;
-    }
-
-    .modal-content button {
-      margin: 6px 4px;
-      padding: 10px 15px;
-      font-size: 14px;
-      border-radius: 10px;
-      border: none;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      min-width: 100px;
-    }
-
-    #soldBtn { background-color: #00796b; }
-    #forgyBtn { background-color: #009688; }
-    #saveBtn { background-color: #388e3c; }
-    #cancelBtn { background-color: #d32f2f; }
-
-    @media (max-width: 480px) {
-      #top-bar {
-        font-size: 14px;
-        padding: 10px 0;
-      }
-
-      button {
-        font-size: 14px;
-        padding: 8px 12px;
-      }
-
-      .label {
-        font-size: 13px;
-      }
-
-      .modal-content h3 {
-        font-size: 16px;
-      }
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 999;
     }
   </style>
 </head>
 <body>
 
-  <div id="top-bar">
-    عدد الكل: <span id="total-count">0</span> |
-    خط مباع: <span id="sold-count">0</span> |
-    تبديل فورجي: <span id="forgy-count">0</span>
+  <h2>تطبيق إدارة البطاقات</h2>
+  <button onclick="showSection( lines )">الخطوط</button>
+  <button onclick="showSection( verify )">التحقق من البيع</button>
+  <button onclick="showPopup()">إحصائيات</button>
+
+  <div id="linesSection" style="display:none;">
+    <div id="reader"></div>
+    <div id="codesContainer"></div>
+    <p>عدد الخطوط: <span id="remainingCount">0</span></p>
   </div>
 
-  <h2>تصوير الباركود للبطاقة</h2>
-  <div id="reader"></div>
-  <button onclick="startScanner()">ابدأ التصوير</button>
-  <button onclick="clearAll()">حذف الكل</button>
+  <div id="verifySection" style="display:none;">
+    <div id="readerVerify"></div>
+    <p id="status"></p>
+    <table id="soldTable">
+      <tr><th>#</th><th>الباركود</th><th>الحالة</th></tr>
+    </table>
+    <p>عدد البطاقات المباعة: <span id="soldCount">0</span></p>
+  </div>
 
-  <div id="card-images"></div>
-
-  <!-- Modal -->
-  <div class="modal" id="typeModal">
-    <div class="modal-content">
-      <h3>اختر نوع الخط</h3>
-      <div id="previewImageContainer"></div>
-      <div style="margin: 10px 0;">
-        <button onclick="selectType( خط مباع )" id="soldBtn">خط مباع</button>
-        <button onclick="selectType( تبديل فورجي )" id="forgyBtn">تبديل فورجي</button>
-      </div>
-      <div id="selectedType" style="margin: 10px; color: #004d40; font-weight: bold;"></div>
-      <div style="margin-top: 15px;">
-        <button onclick="confirmSave()" id="saveBtn">حفظ</button>
-        <button onclick="hideTypeModal()" id="cancelBtn">إلغاء</button>
-      </div>
-    </div>
+  <div id="overlay" onclick="closePopup()"></div>
+  <div id="popup">
+    <h3>إحصائيات</h3>
+    <p>خط مباع: <span id="soldStat">0</span></p>
+    <p>تبديل إلى فورجي: <span id="forgyStat">0</span></p>
+    <p>تم التحقق من بيعها: <span id="verifiedStat">0</span></p>
+    <p>لم يتم التحقق بعد: <span id="unverifiedStat">0</span></p>
+    <button onclick="closePopup()">إغلاق</button>
   </div>
 
   <script>
-    let data = JSON.parse(localStorage.getItem("cards")) || [];
-    let pendingCode = null;
-    let pendingVideo = null;
-    let selectedLineType = null;
+    let codes = JSON.parse(localStorage.getItem("savedCodes") || "[]");
+    let soldCodes = JSON.parse(localStorage.getItem("soldCodes") || "[]");
+    let soldStat = 0, forgyStat = 0;
 
-    function updateUI() {
-      const container = document.getElementById("card-images");
-      const totalCount = document.getElementById("total-count");
-      const soldCount = document.getElementById("sold-count");
-      const forgyCount = document.getElementById("forgy-count");
-
+    function renderTable() {
+      const container = document.getElementById("codesContainer");
       container.innerHTML = "";
-
-      let sold = 0, forgy = 0;
-
-      data.forEach((card, index) => {
-        const div = document.createElement("div");
-        div.className = "card";
-
-        const img = document.createElement("img");
-        img.src = card.image;
-        div.appendChild(img);
-
-        const label = document.createElement("div");
-        label.className = "label";
-        label.textContent = `النوع: ${card.type} - الباركود: ${card.code}`;
-        div.appendChild(label);
-
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "delete-btn";
-        deleteBtn.textContent = "حذف";
-        deleteBtn.onclick = () => {
-          data.splice(index, 1);
-          localStorage.setItem("cards", JSON.stringify(data));
-          updateUI();
-        };
-        div.appendChild(deleteBtn);
-
-        container.appendChild(div);
-
-        if (card.type === "خط مباع") sold++;
-        if (card.type === "تبديل فورجي") forgy++;
+      codes.forEach(code => {
+        const box = document.createElement("div");
+        box.className = "codeBox";
+        box.textContent = code;
+        container.appendChild(box);
       });
-
-      totalCount.textContent = data.length;
-      soldCount.textContent = sold;
-      forgyCount.textContent = forgy;
+      document.getElementById("remainingCount").textContent = codes.length;
     }
 
-    function clearAll() {
-      if (confirm("هل تريد حذف جميع البطاقات؟")) {
-        data = [];
-        localStorage.removeItem("cards");
-        updateUI();
+    function renderSoldTable() {
+      const table = document.getElementById("soldTable");
+      table.innerHTML = "<tr><th>#</th><th>الباركود</th><th>الحالة</th></tr>";
+      soldCodes.forEach((code, i) => {
+        const row = table.insertRow();
+        row.insertCell(0).textContent = i + 1;
+        row.insertCell(1).textContent = code;
+        row.insertCell(2).textContent = "تم بيعه";
+      });
+      document.getElementById("soldCount").textContent = soldCodes.length;
+    }
+
+    function showSection(section) {
+      document.getElementById("linesSection").style.display = section ===  lines  ?  block  :  none ;
+      document.getElementById("verifySection").style.display = section ===  verify  ?  block  :  none ;
+      if (section ===  lines ) startScanner("reader", handleLineScan);
+      if (section ===  verify ) startScanner("readerVerify", handleVerifyScan);
+    }
+
+    function startScanner(id, callback) {
+      if (window.currentScanner) {
+        window.currentScanner.stop().catch(() => {});
       }
-    }
-
-    function showTypeModal(code, video) {
-      pendingCode = code;
-      pendingVideo = video;
-      selectedLineType = null;
-      document.getElementById( selectedType ).textContent = "";
-      const preview = document.getElementById( previewImageContainer );
-
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0);
-      const imageData = canvas.toDataURL("image/png");
-
-      preview.innerHTML = `<img src="${imageData}" />`;
-
-      document.getElementById( typeModal ).style.display =  flex ;
-    }
-
-    function hideTypeModal() {
-      document.getElementById( typeModal ).style.display =  none ;
-      pendingCode = null;
-      pendingVideo = null;
-      selectedLineType = null;
-    }
-
-    function selectType(type) {
-      selectedLineType = type;
-      document.getElementById( selectedType ).textContent = "النوع المحدد: " + type;
-    }
-
-    function confirmSave() {
-      if (!selectedLineType || !pendingVideo || !pendingCode) {
-        alert("يرجى اختيار نوع الخط أولاً.");
-        return;
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = pendingVideo.videoWidth;
-      canvas.height = pendingVideo.videoHeight + 30;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(pendingVideo, 0, 0);
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
-      ctx.fillStyle = "black";
-      ctx.font = "20px Arial";
-      ctx.fillText(`${selectedLineType} - ${pendingCode}`, 10, canvas.height - 10);
-
-      const imageData = canvas.toDataURL("image/png");
-
-      data.push({ code: pendingCode, type: selectedLineType, image: imageData });
-      localStorage.setItem("cards", JSON.stringify(data));
-      updateUI();
-      hideTypeModal();
-    }
-
-    function startScanner() {
-      const html5QrCode = new Html5Qrcode("reader");
-
-      html5QrCode.start(
+      const scanner = new Html5Qrcode(id);
+      window.currentScanner = scanner;
+      scanner.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
-        (decodedText) => {
-          const video = document.querySelector("video");
-          if (video && !data.some(card => card.code === decodedText)) {
-            showTypeModal(decodedText, video);
-          }
-        },
-        (errorMessage) => {
-          console.log("خطأ:", errorMessage);
+        code => {
+          callback(code);
+          scanner.stop().catch(() => {});
         }
-      ).catch(err => {
-        console.error("لم يتم بدء الكاميرا:", err);
-      });
+      ).catch(err => alert("فشل في تشغيل الكاميرا: " + err));
     }
 
-    updateUI();
+    function handleLineScan(code) {
+      if (!codes.includes(code)) {
+        codes.push(code);
+        localStorage.setItem("savedCodes", JSON.stringify(codes));
+        renderTable();
+        alert("تمت الإضافة");
+      } else {
+        alert("الكود موجود بالفعل");
+      }
+    }
+
+    function handleVerifyScan(code) {
+      const status = document.getElementById("status");
+      if (soldCodes.includes(code)) {
+        status.textContent = "تم بيع البطاقة من قبل";
+        status.style.color = "orange";
+      } else if (codes.includes(code)) {
+        status.textContent = "تمت عملية البيع";
+        status.style.color = "green";
+        soldCodes.push(code);
+        localStorage.setItem("soldCodes", JSON.stringify(soldCodes));
+        renderSoldTable();
+      } else {
+        status.textContent = "لم يتم العثور على البطاقة";
+        status.style.color = "red";
+      }
+    }
+
+    function showPopup() {
+      soldStat = soldCodes.length;
+      forgyStat = Math.floor(soldCodes.length / 2);
+      document.getElementById("soldStat").textContent = soldStat;
+      document.getElementById("forgyStat").textContent = forgyStat;
+      document.getElementById("verifiedStat").textContent = soldStat;
+      document.getElementById("unverifiedStat").textContent = codes.length - soldStat;
+      document.getElementById("overlay").style.display = "block";
+      document.getElementById("popup").style.display = "block";
+    }
+
+    function closePopup() {
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("popup").style.display = "none";
+    }
+
+    renderTable();
+    renderSoldTable();
+    showSection( lines );
   </script>
 </body>
 </html>
