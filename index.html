@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar">
 <head>
@@ -66,55 +65,23 @@
       background: #0081a7;
       color: white;
     }
-
-    /* النوافذ المنبثقة */
-    #popup, #successPopup {
+    #popup {
       display: none;
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: linear-gradient(135deg, #ffffff, #f0f8ff);
-      padding: 25px;
-      border-radius: 20px;
-      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
       z-index: 1000;
-      width: 320px;
-      animation: fadeIn 0.3s ease-in-out;
-      text-align: right;
+      width: 300px;
     }
-
-    #popup h3, #successPopup h3 {
+    #popup h3 {
       margin-top: 0;
       color: #00707a;
-      font-size: 22px;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 10px;
-      margin-bottom: 15px;
     }
-
-    #popup p, #successPopup p {
-      font-size: 16px;
-      margin: 8px 0;
-      color: #333;
-    }
-
-    #popup button, #successPopup button {
-      background-color: #00707a;
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-size: 15px;
-      margin-top: 15px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    #popup button:hover, #successPopup button:hover {
-      background-color: #005f66;
-    }
-
     #overlay {
       display: none;
       position: fixed;
@@ -122,14 +89,8 @@
       left: 0;
       width: 100%;
       height: 100%;
-      backdrop-filter: blur(4px);
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.4);
       z-index: 999;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translate(-50%, -60%); }
-      to { opacity: 1; transform: translate(-50%, -50%); }
     }
   </style>
 </head>
@@ -155,9 +116,7 @@
     <p>عدد البطاقات المباعة: <span id="soldCount">0</span></p>
   </div>
 
-  <!-- نافذة الإحصائيات -->
-  <div id="overlay" onclick="closeAllPopups()"></div>
-
+  <div id="overlay" onclick="closePopup()"></div>
   <div id="popup">
     <h3>إحصائيات</h3>
     <p>خط مباع: <span id="soldStat">0</span></p>
@@ -167,18 +126,10 @@
     <button onclick="closePopup()">إغلاق</button>
   </div>
 
-  <!-- نافذة النجاح -->
-  <div id="successPopup">
-    <h3>تمت الإضافة</h3>
-    <p>تمت إضافة الباركود بنجاح</p>
-    <button onclick="closeSuccessPopup()">حسنًا</button>
-  </div>
-
   <script>
     let codes = JSON.parse(localStorage.getItem("savedCodes") || "[]");
     let soldCodes = JSON.parse(localStorage.getItem("soldCodes") || "[]");
-    let currentSection = "lines";
-    let currentScanner = null;
+    let soldStat = 0, forgyStat = 0;
 
     function renderTable() {
       const container = document.getElementById("codesContainer");
@@ -205,7 +156,6 @@
     }
 
     function showSection(section) {
-      currentSection = section;
       document.getElementById("linesSection").style.display = section ===  lines  ?  block  :  none ;
       document.getElementById("verifySection").style.display = section ===  verify  ?  block  :  none ;
       if (section ===  lines ) startScanner("reader", handleLineScan);
@@ -213,14 +163,17 @@
     }
 
     function startScanner(id, callback) {
-      if (currentScanner) currentScanner.stop().catch(() => {});
-      currentScanner = new Html5Qrcode(id);
-      currentScanner.start(
+      if (window.currentScanner) {
+        window.currentScanner.stop().catch(() => {});
+      }
+      const scanner = new Html5Qrcode(id);
+      window.currentScanner = scanner;
+      scanner.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
         code => {
           callback(code);
-          currentScanner.stop().catch(() => {});
+          scanner.stop().catch(() => {});
         }
       ).catch(err => alert("فشل في تشغيل الكاميرا: " + err));
     }
@@ -230,10 +183,9 @@
         codes.push(code);
         localStorage.setItem("savedCodes", JSON.stringify(codes));
         renderTable();
-        showSuccessPopup(); // عرض النافذة المنبثقة
+        alert("تمت الإضافة");
       } else {
         alert("الكود موجود بالفعل");
-        startScanner("reader", handleLineScan);
       }
     }
 
@@ -252,37 +204,22 @@
         status.textContent = "لم يتم العثور على البطاقة";
         status.style.color = "red";
       }
-      setTimeout(() => startScanner("readerVerify", handleVerifyScan), 1000);
     }
 
     function showPopup() {
-      document.getElementById("soldStat").textContent = soldCodes.length;
-      document.getElementById("forgyStat").textContent = Math.floor(soldCodes.length / 2);
-      document.getElementById("verifiedStat").textContent = soldCodes.length;
-      document.getElementById("unverifiedStat").textContent = codes.length - soldCodes.length;
+      soldStat = soldCodes.length;
+      forgyStat = Math.floor(soldCodes.length / 2);
+      document.getElementById("soldStat").textContent = soldStat;
+      document.getElementById("forgyStat").textContent = forgyStat;
+      document.getElementById("verifiedStat").textContent = soldStat;
+      document.getElementById("unverifiedStat").textContent = codes.length - soldStat;
       document.getElementById("overlay").style.display = "block";
       document.getElementById("popup").style.display = "block";
     }
 
     function closePopup() {
+      document.getElementById("overlay").style.display = "none";
       document.getElementById("popup").style.display = "none";
-      document.getElementById("overlay").style.display = "none";
-    }
-
-    function showSuccessPopup() {
-      document.getElementById("overlay").style.display = "block";
-      document.getElementById("successPopup").style.display = "block";
-    }
-
-    function closeSuccessPopup() {
-      document.getElementById("successPopup").style.display = "none";
-      document.getElementById("overlay").style.display = "none";
-      if (currentSection ===  lines ) startScanner("reader", handleLineScan);
-    }
-
-    function closeAllPopups() {
-      closePopup();
-      closeSuccessPopup();
     }
 
     renderTable();
